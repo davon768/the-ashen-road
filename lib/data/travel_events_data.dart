@@ -214,7 +214,7 @@ const _dungeonEvents = [
       EventChoice(
         label: 'Search the satchel',
         outcome: 'Coin, a bent blade, scraps of notes in a hand you can\'t read. Worth something at least.',
-        effect: EventEffect(goldDelta: 30),
+        effect: EventEffect(goldDelta: 20, weaponRewardId: 'seax'),
       ),
       EventChoice(
         label: 'Check for traps first',
@@ -1599,7 +1599,7 @@ const _forgeEvents = [
       EventChoice(
         label: 'Wrench it free and take it',
         outcome: 'It comes free cleanly. The balance is extraordinary. The mark on the tang is still warm when you pocket it. A blade worth having.',
-        effect: EventEffect(goldDelta: 40),
+        effect: EventEffect(weaponRewardId: 'falchion'),
       ),
       EventChoice(
         label: 'Leave it — someone will return for it',
@@ -1668,7 +1668,7 @@ const _forgeEvents = [
       EventChoice(
         label: 'Take what\'s useful',
         outcome: 'Good weapons, already paid for, going nowhere. The company\'s sword arm approves.',
-        effect: EventEffect(goldDelta: 45, devotionDelta: -3),
+        effect: EventEffect(goldDelta: 20, devotionDelta: -3, weaponRewardId: 'arming_sword'),
       ),
       EventChoice(
         label: 'Deliver the load to the forge',
