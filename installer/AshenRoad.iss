@@ -28,8 +28,7 @@ DefaultGroupName={#AppName}
 ; LicensFile=..\LICENSE.txt
 OutputDir={#OutputDir}
 OutputBaseFilename=AshenRoadInstaller_v{#AppVersion}
-SetupIconFile={#BuildDir}\data\flutter_assets\assets\icon\icon.ico
-; Fall back to no icon if the above path doesn't exist — remove the line instead
+; SetupIconFile={#BuildDir}\data\flutter_assets\assets\icon\icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

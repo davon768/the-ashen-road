@@ -213,7 +213,6 @@ class _HardResetButton extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
               await ref.read(gameProvider.notifier).hardReset();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
