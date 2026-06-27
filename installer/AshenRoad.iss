@@ -9,7 +9,7 @@
 ; single .exe that playtesters double-click to install the game.
 
 #define AppName      "The Ashen Road"
-#define AppVersion   "1.0.0"
+#define AppVersion   "1.0.1"
 #define AppPublisher "Project Alpha"
 #define AppExeName   "the_ashen_road.exe"
 #define BuildDir     "..\build\windows\x64\runner\Release"
