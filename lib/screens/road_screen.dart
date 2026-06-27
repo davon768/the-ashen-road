@@ -37,6 +37,7 @@ class RoadScreen extends ConsumerWidget {
     final merchantActive = ref.watch(gameProvider.select((s) => s.merchantActive));
     final merchantStock  = ref.watch(gameProvider.select((s) => s.merchantStock));
     final pendingReturnEventId = ref.watch(gameProvider.select((s) => s.pendingReturnEventId));
+    final pendingHeroJoinName = ref.watch(gameProvider.select((s) => s.pendingHeroJoinName));
 
     final pendingEvent = pendingEventId == null
         ? null
@@ -73,6 +74,44 @@ class RoadScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // ── New companion notification ────────────────────────
+          if (pendingHeroJoinName != null) ...[
+            ParchmentPanel(
+              accentColor: const Color(0xFF4A7A4A),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionHeading('NEW COMPANION'),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$pendingHeroJoinName has joined your company.',
+                    style: AshenText.body.copyWith(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'They stand ready to march. Visit the Party tab to equip and assign them.',
+                    style: AshenText.dim,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF4A7A4A),
+                        side: const BorderSide(color: Color(0xFF4A7A4A)),
+                        shape: const RoundedRectangleBorder(),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onPressed: () => ref.read(gameProvider.notifier).dismissHeroJoinNotification(),
+                      child: const Text('CONTINUE', style: TextStyle(letterSpacing: 1.5, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // ── Road event ────────────────────────────────────────
           if (pendingEvent != null) ...[

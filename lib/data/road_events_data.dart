@@ -931,4 +931,24 @@ const List<RoadEvent> allRoadEvents = [
     ],
   ),
 
+  // ─── HANKEE ───────────────────────────────────────────────────────────────
+
+  RoadEvent(
+    id: 'hankee',
+    title: 'Hankee of the Road',
+    description: 'A small dwarf woman with a crown of blonde hair and vivid blue vestments stands square in the middle of the road, arms folded. She regards your party with the deep suspicion of someone who has been wronged by travelers before. Then her nostrils flare.\n\n"You smell like elderberries!"\n\nA log the size of a mill beam rolls out of the treeline without warning and strikes her with a sound like a church door closing. She does not get up. The road is quiet. A coinpurse and a blade lie in the mud beside her.',
+    choices: [
+      EventChoice(
+        label: 'Collect her belongings',
+        outcome: 'You gather what she left behind. Sixty-nine gold coins and a sword. The elderberry accusation dies with her.',
+        effect: EventEffect(
+          goldDelta: 69,
+          weaponRewardPool: [
+            'seax', 'viking_sword', 'arming_sword', 'falchion', 'longsword', 'estoc', 'messer',
+          ],
+        ),
+      ),
+    ],
+  ),
+
 ];

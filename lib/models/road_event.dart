@@ -14,6 +14,8 @@ class EventEffect {
   final String? spellTomeId;
   /// If set, a weapon with this ID is added to the inventory.
   final String? weaponRewardId;
+  /// If set, one weapon is chosen at random from this pool and added to inventory.
+  final List<String> weaponRewardPool;
 
   const EventEffect({
     this.goldDelta = 0,
@@ -24,6 +26,7 @@ class EventEffect {
     this.heroJoins = false,
     this.spellTomeId,
     this.weaponRewardId,
+    this.weaponRewardPool = const [],
   });
 }
 

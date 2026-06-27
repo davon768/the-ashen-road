@@ -28,6 +28,24 @@ enum ChangelogCategory { added, changed, fixed }
 
 const allChangelogs = <ChangelogEntry>[
 
+  // ── v1.0.1 ─────────────────────────────────────────────────────────────────
+  ChangelogEntry(
+    version: '1.0.1',
+    date: 'June 2026',
+    sections: [
+      ChangelogSection(ChangelogCategory.added, [
+        'Active quests now appear as gold markers on the expedition map.',
+        'Wandering heroes available for hire now scale in level to the zone you\'re in, capped at the player character\'s level.',
+        'A new road encounter has been added. Keep your eyes on the treeline.',
+      ]),
+      ChangelogSection(ChangelogCategory.fixed, [
+        'A banner now appears on the Road screen when a new companion joins through a random event.',
+        'Faith sites (churches, shrines, cult sites) no longer grant devotion to heroes of the wrong faith.',
+        'The party marker on the expedition map now departs from the correct location instead of always snapping back to Ashenvale.',
+      ]),
+    ],
+  ),
+
   // ── v1.0.0 ─────────────────────────────────────────────────────────────────
   ChangelogEntry(
     version: '1.0.0',

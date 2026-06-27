@@ -140,6 +140,8 @@ class GameState {
   final String? pendingReturnEventId;
   // trainingRecords[locationId] = list of heroIds that already trained there
   final Map<String, List<String>> trainingRecords;
+  // Non-null while the "new companion joined" banner should be shown.
+  final String? pendingHeroJoinName;
 
   const GameState({
     required this.party,
@@ -175,6 +177,7 @@ class GameState {
     this.nextMerchantDay = 5,
     this.pendingReturnEventId,
     this.trainingRecords = const {},
+    this.pendingHeroJoinName,
   });
 
   double get goldPerSecond {
@@ -220,6 +223,7 @@ class GameState {
     int? nextMerchantDay,
     Object? pendingReturnEventId = _kSentinel,
     Map<String, List<String>>? trainingRecords,
+    Object? pendingHeroJoinName = _kSentinel,
   }) {
     return GameState(
       party: party ?? this.party,
@@ -273,6 +277,9 @@ class GameState {
           ? this.pendingReturnEventId
           : pendingReturnEventId as String?,
       trainingRecords: trainingRecords ?? this.trainingRecords,
+      pendingHeroJoinName: pendingHeroJoinName == _kSentinel
+          ? this.pendingHeroJoinName
+          : pendingHeroJoinName as String?,
     );
   }
 
@@ -311,6 +318,7 @@ class GameState {
         'nextMerchantDay': nextMerchantDay,
         'pendingReturnEventId': pendingReturnEventId,
         'trainingRecords': trainingRecords.map((k, v) => MapEntry(k, v)),
+        'pendingHeroJoinName': pendingHeroJoinName,
       };
 
   factory GameState.fromJson(Map<String, dynamic> j) => GameState(
@@ -372,6 +380,7 @@ class GameState {
         trainingRecords: (j['trainingRecords'] as Map?)?.map(
                 (k, v) => MapEntry(k as String, List<String>.from(v as List))) ??
             {},
+        pendingHeroJoinName: j['pendingHeroJoinName'] as String?,
       );
 
   factory GameState.newGame() => GameState(

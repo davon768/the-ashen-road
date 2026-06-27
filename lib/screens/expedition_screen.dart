@@ -67,6 +67,11 @@ class _WorldMapViewState extends ConsumerState<_WorldMapView> {
     final expedition  = ref.watch(expeditionProvider);
     final partyReturn = ref.watch(gameProvider.select((s) => s.partyReturn));
     final party       = ref.watch(partyProvider);
+    final activeQuests = ref.watch(gameProvider.select((s) => s.activeQuests));
+    final questLocationTypes = activeQuests
+        .where((q) => !q.completed && q.targetLocationType != null)
+        .map((q) => q.targetLocationType!)
+        .toSet();
     final available   = party.where((h) => h.isAvailable).toList();
     final partyAvgLevel = available.isNotEmpty
         ? available.map((h) => h.level).reduce((a, b) => a + b) / available.length
@@ -75,8 +80,15 @@ class _WorldMapViewState extends ConsumerState<_WorldMapView> {
             : 1.0;
 
     // Compute party marker position in the 1400×1000 map coordinate space.
-    // Ashenvale (150, 500) is the home anchor all travel originates from.
-    const homePos = Offset(150.0, 500.0);
+    // Ashenvale (150, 500) is the fallback origin for the very first expedition.
+    const ashenPos = Offset(150.0, 500.0);
+    final lastCompletedId = ref.watch(gameProvider.select((s) => s.lastCompletedLocationId));
+    final departureLoc = lastCompletedId != null
+        ? worldMap.where((l) => l.id == lastCompletedId).firstOrNull
+        : null;
+    final departurePos = departureLoc != null
+        ? Offset(departureLoc.x, departureLoc.y)
+        : ashenPos;
     Offset? markerPos;
 
     if (expedition != null && !expedition.isComplete) {
@@ -86,7 +98,7 @@ class _WorldMapViewState extends ConsumerState<_WorldMapView> {
       if (dest != null) {
         final destOffset = Offset(dest.x, dest.y);
         markerPos = expedition.isTraveling
-            ? Offset.lerp(homePos, destOffset, expedition.travelProgress)!
+            ? Offset.lerp(departurePos, destOffset, expedition.travelProgress)!
             : destOffset;
       }
     } else if (expedition != null && expedition.isComplete && expedition.worldLocationId != null) {
@@ -96,9 +108,9 @@ class _WorldMapViewState extends ConsumerState<_WorldMapView> {
           .firstOrNull;
       if (dest != null) markerPos = Offset(dest.x, dest.y);
     } else if (partyReturn != null) {
-      // Return animation only plays after leaveTown()
+      // Return animation: from expedition site back to home (Ashenvale).
       markerPos = Offset.lerp(
-        homePos,
+        ashenPos,
         Offset(partyReturn.destX, partyReturn.destY),
         partyReturn.returnProgress,
       );
@@ -164,6 +176,8 @@ class _WorldMapViewState extends ConsumerState<_WorldMapView> {
                               location: loc,
                               locked: loc.discovered &&
                                   loc.minPartyLevel > partyAvgLevel,
+                              hasQuest: loc.discovered &&
+                                  questLocationTypes.contains(loc.type),
                             ),
                           ),
                         ),
@@ -678,7 +692,8 @@ class _PartyMarker extends ConsumerWidget {
 class _LocationMarker extends StatelessWidget {
   final WorldLocation location;
   final bool locked;
-  const _LocationMarker({required this.location, this.locked = false});
+  final bool hasQuest;
+  const _LocationMarker({required this.location, this.locked = false, this.hasQuest = false});
 
   @override
   Widget build(BuildContext context) {
@@ -742,6 +757,34 @@ class _LocationMarker extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 6.5,
                         color: Color(0xFFB89A60),
+                        fontWeight: FontWeight.bold,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (hasQuest)
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A820),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF2E2010), width: 1),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x88D4A820), blurRadius: 4, spreadRadius: 1),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '!',
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: Color(0xFF1A1408),
                         fontWeight: FontWeight.bold,
                         height: 1,
                       ),

@@ -1008,12 +1008,30 @@ class GameNotifier extends Notifier<GameState> {
     final hasStage = _propertyHasAddon(PropertyType.tavern, 'tavern_stage');
     final recruits = <HeroRecruit>[];
     if (!isMonastery) {
+      final playerLevel = state.party
+          .where((h) => h.isPlayerCharacter)
+          .firstOrNull?.level ?? 1;
+      // Level band for this zone: depth 1-2 → [1,6], depth 3 → [5,10], etc.
+      final zoneBase = switch (expedition.depth) {
+        1 || 2 => 1,
+        3      => 5,
+        4      => 10,
+        5      => 14,
+        6      => 18,
+        _      => 22,
+      };
       final recruitCount = 1 + rng.nextInt(2); // 1 or 2 wanderers
       final hireCost = 50 + expedition.depth * 25;
       for (var i = 0; i < recruitCount; i++) {
         var hero = generateHero();
-        // Bard's Stage: recruits arrive one level higher on average
-        if (hasStage) hero = hero.copyWith(level: 2, experience: 100);
+        final levelMin = zoneBase.clamp(1, playerLevel);
+        final levelMax = (zoneBase + 5).clamp(levelMin, playerLevel);
+        var heroLevel = levelMin + (levelMax > levelMin ? rng.nextInt(levelMax - levelMin + 1) : 0);
+        // Bard's Stage: one extra level on top
+        if (hasStage) heroLevel = (heroLevel + 1).clamp(1, playerLevel);
+        final heroXp = 50 * heroLevel * (heroLevel - 1);
+        hero = hero.copyWith(level: heroLevel, experience: heroXp);
+        hero = hero.copyWith(currentHealth: hero.maxHealth);
         recruits.add(HeroRecruit(recruitId: _uuid.v4(), hero: hero, hireCost: hireCost));
       }
     }
@@ -1935,34 +1953,28 @@ class GameNotifier extends Notifier<GameState> {
     if (hero.faith == null) return 0;
     double gain = 0;
 
-    // Faith site visits grant a large base devotion bonus regardless of faith
-    final isFaithSite = type == LocationType.church ||
-        type == LocationType.shrine ||
-        type == LocationType.cultSite;
-    if (isFaithSite) gain += 12;
-
     switch (hero.faith!) {
       case FaithType.luminantChurch:
         if (type == LocationType.dungeon || type == LocationType.ruins) gain += 4;
         if (type == LocationType.monastery) gain += 8;
-        if (type == LocationType.church) gain += 6;   // extra for matching site
+        if (type == LocationType.church) gain += 18;
       case FaithType.oldWays:
         gain += 3;
         if (type == LocationType.wilderness) gain += 4;
-        if (type == LocationType.shrine) gain += 6;
+        if (type == LocationType.shrine) gain += 18;
       case FaithType.paleCourt:
         if (type == LocationType.dungeon ||
             type == LocationType.ruins ||
             type == LocationType.monastery) { gain += 5; }
-        if (type == LocationType.church || type == LocationType.shrine) gain += 5;
+        if (type == LocationType.church || type == LocationType.shrine) gain += 17;
       case FaithType.compactOfSaints:
         if (type == LocationType.town) gain += 7;
         if (outcome == CombatOutcome.victory) gain += 2;
-        if (type == LocationType.church) gain += 6;
+        if (type == LocationType.church) gain += 18;
       case FaithType.ashenRite:
         gain += 3;
         if (type == LocationType.dungeon || type == LocationType.castle) gain += 3;
-        if (type == LocationType.cultSite) gain += 8;
+        if (type == LocationType.cultSite) gain += 20;
     }
 
     // Apply devotion gain bonus from chosen perks
@@ -2043,12 +2055,18 @@ class GameNotifier extends Notifier<GameState> {
     if (effect.weaponRewardId != null) {
       updatedInventory = updatedInventory.addWeapon(effect.weaponRewardId!);
     }
+    String? poolWeaponId;
+    if (effect.weaponRewardPool.isNotEmpty) {
+      poolWeaponId = effect.weaponRewardPool[Random().nextInt(effect.weaponRewardPool.length)];
+      updatedInventory = updatedInventory.addWeapon(poolWeaponId);
+    }
 
     state = state.copyWith(
       gold: newGold,
       party: heroRecruit != null ? [...updatedParty, heroRecruit] : updatedParty,
       inventory: updatedInventory,
       pendingEventId: null,
+      pendingHeroJoinName: heroRecruit?.name,
     );
     _log('${event.title} — ${choice.outcome}');
 
@@ -2060,10 +2078,18 @@ class GameNotifier extends Notifier<GameState> {
       final weapon = allWeapons.where((w) => w.id == effect.weaponRewardId).firstOrNull;
       if (weapon != null) _log('${weapon.name} has been added to your inventory.');
     }
+    if (poolWeaponId != null) {
+      final weapon = allWeapons.where((w) => w.id == poolWeaponId).firstOrNull;
+      if (weapon != null) _log('${weapon.name} has been added to your inventory.');
+    }
     if (heroRecruit != null) {
       _generatePortrait(heroRecruit);
       _log('${heroRecruit.name} has joined your company.');
     }
+  }
+
+  void dismissHeroJoinNotification() {
+    state = state.copyWith(pendingHeroJoinName: null);
   }
 
   void resolveReturnEventChoice(int choiceIndex) {
@@ -2150,12 +2176,18 @@ class GameNotifier extends Notifier<GameState> {
     if (effect.weaponRewardId != null) {
       updatedInventory = updatedInventory.addWeapon(effect.weaponRewardId!);
     }
+    String? poolWeaponId;
+    if (effect.weaponRewardPool.isNotEmpty) {
+      poolWeaponId = effect.weaponRewardPool[Random().nextInt(effect.weaponRewardPool.length)];
+      updatedInventory = updatedInventory.addWeapon(poolWeaponId);
+    }
 
     state = state.copyWith(
       gold: newGold,
       party: heroRecruit != null ? [...updatedParty, heroRecruit] : updatedParty,
       inventory: updatedInventory,
       pendingTravelEventId: null,
+      pendingHeroJoinName: heroRecruit?.name,
     );
     _log('${event.title} — ${choice.outcome}');
 
@@ -2165,6 +2197,10 @@ class GameNotifier extends Notifier<GameState> {
     }
     if (effect.weaponRewardId != null) {
       final weapon = allWeapons.where((w) => w.id == effect.weaponRewardId).firstOrNull;
+      if (weapon != null) _log('${weapon.name} has been added to your inventory.');
+    }
+    if (poolWeaponId != null) {
+      final weapon = allWeapons.where((w) => w.id == poolWeaponId).firstOrNull;
       if (weapon != null) _log('${weapon.name} has been added to your inventory.');
     }
     if (heroRecruit != null) {
