@@ -9,7 +9,7 @@
 ; single .exe that playtesters double-click to install the game.
 
 #define AppName      "The Ashen Road"
-#define AppVersion   "1.0.1"
+#define AppVersion   "1.0.2"
 #define AppPublisher "Project Alpha"
 #define AppExeName   "the_ashen_road.exe"
 #define BuildDir     "..\build\windows\x64\runner\Release"
@@ -28,7 +28,7 @@ DefaultGroupName={#AppName}
 ; LicensFile=..\LICENSE.txt
 OutputDir={#OutputDir}
 OutputBaseFilename=AshenRoadInstaller_v{#AppVersion}
-; SetupIconFile={#BuildDir}\data\flutter_assets\assets\icon\icon.ico
+SetupIconFile=..\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

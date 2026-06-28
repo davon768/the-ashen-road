@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
@@ -142,9 +145,9 @@ class GameNotifier extends Notifier<GameState> {
       }
 
       if (offlineSeconds > 10) _applyOfflineProgress(offlineSeconds);
-      // Regenerate any portrait that didn't make it to disk in a previous session.
+      // Regenerate any portrait that wasn't saved locally in a previous session.
       for (final hero in state.party) {
-        if (hero.imageUrl == null) _generatePortrait(hero);
+        if (hero.localImagePath == null) _generatePortrait(hero);
       }
     }
     _startTickTimer();
@@ -605,10 +608,28 @@ class GameNotifier extends Notifier<GameState> {
       }
     }
     for (final id in itemLoot.weaponIds) {
-      inv = inv.addWeapon(id);
+      final w = allWeapons.where((w) => w.id == id).firstOrNull;
+      if (w == null) continue;
+      final mods = generateModifiers(_rng, w.rarity, true);
+      inv = inv.addItemInstance(ItemInstance(
+        instanceId: _uuid.v4(),
+        baseItemId: id,
+        isWeapon: true,
+        rarity: w.rarity,
+        modifiers: mods,
+      ));
     }
     for (final id in itemLoot.armorIds) {
-      inv = inv.addArmor(id);
+      final a = allArmor.where((a) => a.id == id).firstOrNull;
+      if (a == null) continue;
+      final mods = generateModifiers(_rng, a.rarity, false);
+      inv = inv.addItemInstance(ItemInstance(
+        instanceId: _uuid.v4(),
+        baseItemId: id,
+        isWeapon: false,
+        rarity: a.rarity,
+        modifiers: mods,
+      ));
     }
     for (final id in itemLoot.consumableIds) {
       inv = inv.addConsumable(id);
@@ -1636,7 +1657,7 @@ class GameNotifier extends Notifier<GameState> {
   /// Use from Settings when portraits are missing or the style was changed.
   void wipeAndRegeneratePortraits() {
     final wiped = state.party
-        .map((h) => h.copyWith(imageUrl: null))
+        .map((h) => h.copyWith(imageUrl: null, localImagePath: null))
         .toList();
     state = state.copyWith(party: wiped);
     _save.save(state);
@@ -1651,16 +1672,27 @@ class GameNotifier extends Notifier<GameState> {
   }
 
   Future<void> _generatePortraitAsync(Hero hero, {String? appearanceHint}) async {
-    // Skip if portrait already arrived (e.g., from a parallel call).
-    if (state.party.any((h) => h.id == hero.id && h.imageUrl != null)) return;
+    // Skip if portrait is already cached locally (e.g., from a parallel call).
+    if (state.party.any((h) => h.id == hero.id && h.localImagePath != null)) return;
     try {
       final replicate = ref.read(replicateServiceProvider);
       final prompt = buildPortraitPrompt(hero, appearanceHint: appearanceHint);
       final url = await replicate.generateImage(prompt, aspectRatio: '2:3');
       if (url == null) return;
+      // Download bytes and save to a permanent local file.
+      final response = await http.get(Uri.parse(url));
+      final docsDir = await getApplicationDocumentsDirectory();
+      final portraitDir = Directory(
+          '${docsDir.path}${Platform.pathSeparator}The Ashen Road${Platform.pathSeparator}portraits');
+      await portraitDir.create(recursive: true);
+      final localPath =
+          '${portraitDir.path}${Platform.pathSeparator}${hero.id}.png';
+      await File(localPath).writeAsBytes(response.bodyBytes);
       // Re-read state — it may have changed while the API call was running.
       final updated = state.party.map((h) {
-        return h.id == hero.id ? h.copyWith(imageUrl: url) : h;
+        return h.id == hero.id
+            ? h.copyWith(imageUrl: url, localImagePath: localPath)
+            : h;
       }).toList();
       state = state.copyWith(party: updated);
       _save.save(state);
@@ -2254,28 +2286,48 @@ class GameNotifier extends Notifier<GameState> {
   // ─── TRAVELING MERCHANT ───────────────────────────────────────────────────
 
   static const _merchantWeaponPool = [
-    'war_axe', 'great_axe', 'mace', 'war_hammer', 'battle_axe',
-    'katana', 'rapier', 'lance', 'scythe', 'great_sword',
-    'crossbow', 'longbow', 'scepter', 'staff', 'wand',
+    // Swords
+    'seax', 'viking_sword', 'arming_sword', 'falchion', 'longsword', 'estoc', 'messer',
+    // Axes & polearms
+    'bearded_axe', 'dane_axe', 'battle_axe', 'halberd', 'glaive', 'billhook', 'spear',
+    // Blunt
+    'mace', 'morningstar', 'war_hammer',
+    // Daggers
+    'rondel_dagger', 'misericorde', 'baselard',
+    // Ranged
+    'hunting_bow', 'longbow', 'crossbow', 'war_bow',
+    // Caster
+    'oak_staff', 'skull_staff', 'iron_wand', 'grimoire',
   ];
   static const _merchantArmorPool = [
-    'plate_chestplate', 'chain_hauberk', 'scale_breastplate',
-    'great_helm', 'chain_coif', 'plate_gauntlets',
-    'plate_greaves', 'leather_boots', 'tower_shield',
+    // Helmets
+    'spangenhelm', 'nasal_helm', 'kettle_hat', 'great_helm', 'bascinet', 'sallet',
+    'hood', 'cloth_coif', 'scholar_hood', 'mail_coif',
+    // Body
+    'gambeson', 'leather_armor', 'studded_leather', 'mail_hauberk',
+    'coat_of_plates', 'brigandine', 'plate_cuirass',
+    'robes', 'pilgrim_coat', 'acolyte_vestments', 'hexwoven_robe', 'shroud_robe',
+    // Shields
+    'round_shield', 'kite_shield', 'heater_shield', 'buckler',
+    // Gloves
+    'leather_gloves', 'padded_gloves', 'archers_bracers', 'ritual_gloves', 'mail_mittens', 'gauntlets',
+    // Legs & boots
+    'cloth_hose', 'wool_hose', 'mail_chausses', 'plate_greaves',
+    'leather_boots', 'ankle_boots', 'road_warden_boots', 'iron_shod_boots', 'sabatons',
   ];
 
   List<MerchantItem> _generateMerchantStock() {
     final rng = Random();
     final items = <MerchantItem>[];
-    final count = 4;
-    for (int i = 0; i < count; i++) {
+    const count = 4;
+    int attempts = 0;
+    while (items.length < count && attempts < count * 5) {
+      attempts++;
       final useWeapon = rng.nextBool();
       final pool = useWeapon ? _merchantWeaponPool : _merchantArmorPool;
-      // Pick a valid id from data or fallback to pool entry
       final candidateId = pool[rng.nextInt(pool.length)];
-      final isWeapon = useWeapon;
       int baseValue;
-      if (isWeapon) {
+      if (useWeapon) {
         final w = allWeapons.where((w) => w.id == candidateId).firstOrNull;
         if (w == null) continue;
         baseValue = w.value;
@@ -2285,7 +2337,7 @@ class GameNotifier extends Notifier<GameState> {
         baseValue = a.value;
       }
       final price = (baseValue * (2.0 + rng.nextDouble())).round().clamp(50, 9999);
-      items.add(MerchantItem(id: candidateId, isArmor: !isWeapon, price: price));
+      items.add(MerchantItem(id: candidateId, isArmor: !useWeapon, price: price));
     }
     return items;
   }

@@ -25,7 +25,7 @@
 $ErrorActionPreference = 'Stop'
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$InnoSetupPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$InnoSetupPath = "C:\Program Files\Inno Setup 7\ISCC.exe"
 $IssFile = Join-Path $ProjectRoot "installer\AshenRoad.iss"
 $OutputDir = Join-Path $ProjectRoot "installer\output"
 

@@ -28,6 +28,18 @@ enum ChangelogCategory { added, changed, fixed }
 
 const allChangelogs = <ChangelogEntry>[
 
+  // ── v1.0.2 ─────────────────────────────────────────────────────────────────
+  ChangelogEntry(
+    version: '1.0.2',
+    date: 'June 2026',
+    sections: [
+      ChangelogSection(ChangelogCategory.fixed, [
+        'Combat loot items now roll proper stat modifiers based on their rarity.',
+        'Hero portraits are saved locally on first generation and will no longer disappear after the game has been closed for a while.',
+      ]),
+    ],
+  ),
+
   // ── v1.0.1 ─────────────────────────────────────────────────────────────────
   ChangelogEntry(
     version: '1.0.1',

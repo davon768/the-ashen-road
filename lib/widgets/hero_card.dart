@@ -223,7 +223,7 @@ class _PortraitColumn extends StatelessWidget {
       // opaque behaviour ensures this detector wins the arena over the outer
       // card GestureDetector so the expand always fires when tapping the portrait
       behavior: HitTestBehavior.opaque,
-      onTap: hero.imageUrl != null ? () => _expand(context) : null,
+      onTap: (hero.localImagePath != null || hero.imageUrl != null) ? () => _expand(context) : null,
       child: SizedBox(
         width: _w,
         height: _h,
@@ -234,7 +234,7 @@ class _PortraitColumn extends StatelessWidget {
             ClipRect(child: _image()),
 
             // Expand hint — only when image is ready
-            if (hero.imageUrl != null)
+            if (hero.localImagePath != null || hero.imageUrl != null)
               Positioned(
                 right: 0,
                 bottom: 0,
@@ -252,6 +252,15 @@ class _PortraitColumn extends StatelessWidget {
   }
 
   Widget _image() {
+    if (hero.localImagePath != null) {
+      return Image.file(
+        File(hero.localImagePath!),
+        width: _w,
+        height: _h,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _placeholder(),
+      );
+    }
     if (hero.imageUrl != null) {
       return CachedNetworkImage(
         imageUrl: hero.imageUrl!,
@@ -468,18 +477,27 @@ class _FullBodyViewerState extends State<_FullBodyViewer> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Center(
-                    child: CachedNetworkImage(
-                      imageUrl: hero.imageUrl!,
-                      fit: BoxFit.contain,
-                      placeholder: (_, _) => const Center(
-                        child: CircularProgressIndicator(
-                            color: AshenColors.copper, strokeWidth: 1.5),
-                      ),
-                      errorWidget: (_, _, _) => const Center(
-                        child: Icon(Icons.broken_image,
-                            color: AshenColors.ashGrey, size: 48),
-                      ),
-                    ),
+                    child: hero.localImagePath != null
+                        ? Image.file(
+                            File(hero.localImagePath!),
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) => const Center(
+                              child: Icon(Icons.broken_image,
+                                  color: AshenColors.ashGrey, size: 48),
+                            ),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: hero.imageUrl!,
+                            fit: BoxFit.contain,
+                            placeholder: (_, _) => const Center(
+                              child: CircularProgressIndicator(
+                                  color: AshenColors.copper, strokeWidth: 1.5),
+                            ),
+                            errorWidget: (_, _, _) => const Center(
+                              child: Icon(Icons.broken_image,
+                                  color: AshenColors.ashGrey, size: 48),
+                            ),
+                          ),
                   ),
                 ),
               ),

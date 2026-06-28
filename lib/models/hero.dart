@@ -215,6 +215,7 @@ class Hero {
   final HeroStatus status;
   final int recoverySecondsRemaining;
   final String? imageUrl;
+  final String? localImagePath;
   final bool isPlayerCharacter;
   final bool permadeathEnabled;
   final bool isFemale;
@@ -241,6 +242,7 @@ class Hero {
     this.status = HeroStatus.active,
     this.recoverySecondsRemaining = 0,
     this.imageUrl,
+    this.localImagePath,
     this.isPlayerCharacter = false,
     this.permadeathEnabled = false,
     this.isFemale = false,
@@ -306,7 +308,8 @@ class Hero {
     List<Ability>? abilities,
     HeroStatus? status,
     int? recoverySecondsRemaining,
-    Object? imageUrl  = _sentinel,
+    Object? imageUrl       = _sentinel,
+    Object? localImagePath = _sentinel,
     bool? isPlayerCharacter,
     bool? permadeathEnabled,
     bool? isFemale,
@@ -333,7 +336,8 @@ class Hero {
       status: status ?? this.status,
       recoverySecondsRemaining:
           recoverySecondsRemaining ?? this.recoverySecondsRemaining,
-      imageUrl:  imageUrl  == _sentinel ? this.imageUrl  : imageUrl  as String?,
+      imageUrl:       imageUrl       == _sentinel ? this.imageUrl       : imageUrl       as String?,
+      localImagePath: localImagePath == _sentinel ? this.localImagePath : localImagePath as String?,
       isPlayerCharacter: isPlayerCharacter ?? this.isPlayerCharacter,
       permadeathEnabled: permadeathEnabled ?? this.permadeathEnabled,
       isFemale: isFemale ?? this.isFemale,
@@ -361,6 +365,7 @@ class Hero {
         'status': status.name,
         'recoverySecondsRemaining': recoverySecondsRemaining,
         'imageUrl': imageUrl,
+        'localImagePath': localImagePath,
         'isPlayerCharacter': isPlayerCharacter,
         'permadeathEnabled': permadeathEnabled,
         'isFemale': isFemale,
@@ -393,6 +398,7 @@ class Hero {
         status: HeroStatus.values.byName(json['status'] ?? 'active'),
         recoverySecondsRemaining: json['recoverySecondsRemaining'] ?? 0,
         imageUrl: json['imageUrl'],
+        localImagePath: json['localImagePath'] as String?,
         isPlayerCharacter: json['isPlayerCharacter'] ?? false,
         permadeathEnabled: json['permadeathEnabled'] ?? false,
         isFemale: json['isFemale'] ?? false,
