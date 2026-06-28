@@ -823,7 +823,7 @@ class GameNotifier extends Notifier<GameState> {
     // 12% chance a wanderer joins the party after a victory
     if (finalOutcome == CombatOutcome.victory && state.party.length < _maxPartySize) {
       if (rng.nextDouble() < 0.12) {
-        final recruit = generateHero();
+        final recruit = _scaleHeroToZone(generateHero(), depth);
         state = state.copyWith(
           party: [...state.party, recruit],
           eventLog: [
@@ -1666,6 +1666,29 @@ class GameNotifier extends Notifier<GameState> {
     }
   }
 
+  /// Scale a freshly-generated hero to the current zone's level band,
+  /// capped at the player character's level — same rules as town hirelings.
+  Hero _scaleHeroToZone(Hero hero, int depth) {
+    final playerLevel = state.party
+        .where((h) => h.isPlayerCharacter)
+        .firstOrNull?.level ?? 1;
+    final zoneBase = switch (depth) {
+      1 || 2 => 1,
+      3      => 5,
+      4      => 10,
+      5      => 14,
+      6      => 18,
+      _      => 22,
+    };
+    final levelMin = zoneBase.clamp(1, playerLevel);
+    final levelMax = (zoneBase + 5).clamp(levelMin, playerLevel);
+    final heroLevel = levelMin +
+        (levelMax > levelMin ? _rng.nextInt(levelMax - levelMin + 1) : 0);
+    final heroXp = 50 * heroLevel * (heroLevel - 1);
+    var scaled = hero.copyWith(level: heroLevel, experience: heroXp);
+    return scaled.copyWith(currentHealth: scaled.maxHealth);
+  }
+
   void _generatePortrait(Hero hero, {String? appearanceHint}) {
     // Each portrait fires independently — the service semaphore handles throttling.
     _generatePortraitAsync(hero, appearanceHint: appearanceHint);
@@ -2074,7 +2097,8 @@ class GameNotifier extends Notifier<GameState> {
     // Hero join from road event
     Hero? heroRecruit;
     if (effect.heroJoins && state.party.length < _maxPartySize) {
-      heroRecruit = generateHero();
+      final depth = state.activeExpedition?.depth ?? 1;
+      heroRecruit = _scaleHeroToZone(generateHero(), depth);
     }
 
     // Spell tome from road event
@@ -2197,7 +2221,8 @@ class GameNotifier extends Notifier<GameState> {
     // Hero recruit
     Hero? heroRecruit;
     if (effect.heroJoins && state.party.length < _maxPartySize) {
-      heroRecruit = generateHero();
+      final depth = state.activeExpedition?.depth ?? 1;
+      heroRecruit = _scaleHeroToZone(generateHero(), depth);
     }
 
     // Item rewards

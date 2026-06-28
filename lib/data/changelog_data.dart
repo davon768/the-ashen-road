@@ -28,6 +28,17 @@ enum ChangelogCategory { added, changed, fixed }
 
 const allChangelogs = <ChangelogEntry>[
 
+  // ── v1.0.3 ─────────────────────────────────────────────────────────────────
+  ChangelogEntry(
+    version: '1.0.3',
+    date: 'June 2026',
+    sections: [
+      ChangelogSection(ChangelogCategory.fixed, [
+        'Heroes who join through random events and combat now scale to the current zone\'s level range, the same as heroes hired at town.',
+      ]),
+    ],
+  ),
+
   // ── v1.0.2 ─────────────────────────────────────────────────────────────────
   ChangelogEntry(
     version: '1.0.2',
